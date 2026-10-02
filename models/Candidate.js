@@ -9,15 +9,17 @@ const candidateSchema = new mongoose.Schema(
     },
 
     email: {
-  type: String,
-  required: true,
-  unique: true,
-  trim: true,
-  lowercase: true,
-},
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
+    },
+
     mobile: {
       type: String,
       required: true,
+      trim: true,
     },
 
     institution: {
@@ -39,13 +41,28 @@ const candidateSchema = new mongoose.Schema(
 
     certificateType: {
       type: String,
-      enum: ["Participation", "Presenter", "Speaker", "Delegate", "Volunteer", "Organizer", "Winner"],
-      default: "Participation",
+      enum: [
+        "Organizer",
+        "Resource Person",
+        "Delegate",
+        "Research Paper",
+        "Poster",
+      ],
+      required: true,
+      default: "Delegate",
+    },
+
+    // Required only for Research Paper / Poster
+    presentationTitle: {
+      type: String,
+      trim: true,
+      default: "",
     },
 
     eventName: {
       type: String,
       required: true,
+      trim: true,
     },
 
     status: {
@@ -55,8 +72,8 @@ const candidateSchema = new mongoose.Schema(
     },
 
     approvedAt: {
-  type: Date,
-},
+      type: Date,
+    },
 
     certificateId: {
       type: String,
