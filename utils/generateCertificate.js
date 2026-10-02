@@ -266,6 +266,81 @@ body {
 
 
 /* ==================================================
+   NORMAL CERTIFICATE TYPE TICKS
+   ORGANIZER / RESOURCE PERSON / DELEGATE
+   ================================================== */
+
+.certificate-type-tick {
+
+  position: absolute;
+
+  top: 62.4%;
+
+  width: 28px;
+  height: 22px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  font-family: Arial, sans-serif;
+
+  font-size: 24px;
+
+  font-weight: 700;
+
+  line-height: 1;
+
+  color: #102c4c;
+
+  z-index: 10;
+
+  pointer-events: none;
+
+}
+
+
+/*
+   ORGANIZER
+*/
+
+.organizer-tick {
+
+  left: 61.9%;
+
+  transform: translateX(-50%);
+
+}
+
+
+/*
+   RESOURCE PERSON
+*/
+
+.resource-person-tick {
+
+  left: 69.0%;
+
+  transform: translateX(-50%);
+
+}
+
+
+/*
+   DELEGATE
+*/
+
+.delegate-tick {
+
+  left: 81.5%;
+
+  transform: translateX(-50%);
+
+}
+
+
+/* ==================================================
    PRESENTATION CERTIFICATE
    NAME
    ================================================== */
@@ -379,7 +454,7 @@ body {
 
 
 /*
-   Research Paper
+   RESEARCH PAPER
 */
 
 .research-paper-tick {
@@ -392,7 +467,7 @@ body {
 
 
 /*
-   Poster
+   POSTER
 */
 
 .poster-tick {
@@ -483,17 +558,23 @@ body {
   ${
     isPresentationCertificate
       ? `
+        <!-- ==========================================
+             PRESENTATION CERTIFICATE
+             ========================================== -->
+
         <!-- PRESENTATION NAME -->
 
         <div class="presentation-name">
           ${escapeHtml(formattedName)}
         </div>
 
+
         <!-- PRESENTATION TITLE -->
 
         <div class="presentation-title">
           ${escapeHtml(formattedPresentationTitle)}
         </div>
+
 
         <!-- RESEARCH PAPER TICK -->
 
@@ -506,6 +587,7 @@ body {
             `
             : ""
         }
+
 
         <!-- POSTER TICK -->
 
@@ -520,23 +602,70 @@ body {
         }
       `
       : `
+        <!-- ==========================================
+             NORMAL CERTIFICATE
+             ========================================== -->
+
         <!-- NORMAL CERTIFICATE NAME -->
 
         <div class="candidate-name">
           ${escapeHtml(formattedName)}
         </div>
+
+
+        <!-- ORGANIZER TICK -->
+
+        ${
+          certificateType === "Organizer"
+            ? `
+              <div class="certificate-type-tick organizer-tick">
+                ✓
+              </div>
+            `
+            : ""
+        }
+
+
+        <!-- RESOURCE PERSON TICK -->
+
+        ${
+          certificateType === "Resource Person"
+            ? `
+              <div class="certificate-type-tick resource-person-tick">
+                ✓
+              </div>
+            `
+            : ""
+        }
+
+
+        <!-- DELEGATE TICK -->
+
+        ${
+          certificateType === "Delegate"
+            ? `
+              <div class="certificate-type-tick delegate-tick">
+                ✓
+              </div>
+            `
+            : ""
+        }
       `
   }
 
 
-  <!-- CERTIFICATE ID -->
+  <!-- ==========================================
+       CERTIFICATE ID
+       ========================================== -->
 
   <div class="certificate-id">
     Certificate ID: ${escapeHtml(certificateId)}
   </div>
 
 
-  <!-- QR CODE -->
+  <!-- ==========================================
+       QR CODE
+       ========================================== -->
 
   <img
     class="qr-code"
@@ -545,7 +674,9 @@ body {
   />
 
 
-  <!-- GENERATED DATE & TIME -->
+  <!-- ==========================================
+       GENERATED DATE & TIME
+       ========================================== -->
 
   <div class="generated-date">
     Generated On: ${escapeHtml(formattedDateTime)}
