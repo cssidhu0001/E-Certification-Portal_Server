@@ -1,5 +1,6 @@
 const Candidate = require("../models/Candidate");
 const generateCertificate = require("../utils/generateCertificate");
+const { formatTitleCase } = require("../utils/formatText");
 
 // ======================================================
 // CREATE CANDIDATE
@@ -7,7 +8,7 @@ const generateCertificate = require("../utils/generateCertificate");
 
 const createCandidate = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, name, certificateType, presentationTitle } = req.body;
 
     // Basic email validation
     if (!email) {
@@ -18,6 +19,14 @@ const createCandidate = async (req, res) => {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
+
+    // Format name
+    const formattedName = formatTitleCase(name);
+
+    // Format presentation title
+    const formattedPresentationTitle = formatTitleCase(
+      presentationTitle || ""
+    );
 
     // Check duplicate email
     const existingCandidate = await Candidate.findOne({
@@ -34,7 +43,15 @@ const createCandidate = async (req, res) => {
     // Create candidate
     const candidate = await Candidate.create({
       ...req.body,
+      name: formattedName,
       email: normalizedEmail,
+
+      presentationTitle:
+        certificateType === "Research Paper" ||
+        certificateType === "Poster"
+          ? formattedPresentationTitle
+          : "",
+
       status: "Pending",
     });
 
@@ -43,7 +60,6 @@ const createCandidate = async (req, res) => {
       message: "Registration submitted successfully",
       candidate,
     });
-
   } catch (error) {
     console.error("Create Candidate Error:", error);
 
@@ -53,7 +69,6 @@ const createCandidate = async (req, res) => {
     });
   }
 };
-
 
 // ======================================================
 // GET ALL CANDIDATES

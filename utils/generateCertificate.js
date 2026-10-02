@@ -3,6 +3,8 @@ const QRCode = require("qrcode");
 const path = require("path");
 const fs = require("fs");
 
+const { formatTitleCase } = require("../utils/formatText");
+
 const generateCertificate = async (candidate, certificateId) => {
   let browser = null;
   let page = null;
@@ -11,8 +13,8 @@ const generateCertificate = async (candidate, certificateId) => {
     console.log("======================================");
     console.log("Starting certificate generation...");
     console.log("Candidate:", candidate.name);
-    console.log("Certificate ID:", certificateId);
     console.log("Certificate Type:", candidate.certificateType);
+    console.log("Certificate ID:", certificateId);
     console.log("======================================");
 
     // ==================================================
@@ -29,28 +31,70 @@ const generateCertificate = async (candidate, certificateId) => {
     });
 
     // ==================================================
-    // CERTIFICATE TEMPLATE
+    // CERTIFICATE TYPE
     // ==================================================
+
+    const certificateType = String(
+      candidate.certificateType || ""
+    ).trim();
+
+    const isPresentationCertificate =
+      certificateType === "Research Paper" ||
+      certificateType === "Poster";
+
+    // ==================================================
+    // SELECT TEMPLATE
+    // ==================================================
+
+    const templateFileName = isPresentationCertificate
+      ? "certificate-presentation.png"
+      : "certificate.png";
 
     const templatePath = path.join(
       __dirname,
-      "../assets/certificate.png"
+      "../assets",
+      templateFileName
     );
 
     if (!fs.existsSync(templatePath)) {
       throw new Error(
-        `certificate.png not found at: ${templatePath}`
+        `${templateFileName} not found at: ${templatePath}`
       );
     }
 
     console.log(
-      "Template found:",
-      templatePath
+      "Template selected:",
+      templateFileName
     );
 
     const template = fs
       .readFileSync(templatePath)
       .toString("base64");
+
+    // ==================================================
+    // FORMAT TEXT
+    // ==================================================
+
+    const formattedName = formatTitleCase(
+      candidate.name || ""
+    );
+
+    const formattedPresentationTitle =
+      formatTitleCase(
+        candidate.presentationTitle || ""
+      );
+
+    console.log(
+      "Formatted Name:",
+      formattedName
+    );
+
+    if (isPresentationCertificate) {
+      console.log(
+        "Presentation Title:",
+        formattedPresentationTitle
+      );
+    }
 
     // ==================================================
     // VERIFICATION URL
@@ -84,7 +128,7 @@ const generateCertificate = async (candidate, certificateId) => {
     console.log("QR generated");
 
     // ==================================================
-    // CERTIFICATE GENERATED DATE & TIME
+    // GENERATED DATE & TIME
     // ==================================================
 
     const generatedAt = new Date();
@@ -125,34 +169,6 @@ const generateCertificate = async (candidate, certificateId) => {
           })[char]
       );
     };
-
-    // ==================================================
-    // CERTIFICATE TYPE
-    // ==================================================
-
-    const certificateType =
-      String(candidate.certificateType || "").trim();
-
-    // ==================================================
-    // DYNAMIC TICK
-    // ==================================================
-    //
-    // Current certificate artwork contains:
-    //
-    // Organizer / Resource Person / Delegate
-    //
-    // Each option has its own exact position.
-    //
-    // ==================================================
-
-    const showOrganizerTick =
-      certificateType === "Organizer";
-
-    const showResourcePersonTick =
-      certificateType === "Resource Person";
-
-    const showDelegateTick =
-      certificateType === "Delegate";
 
     // ==================================================
     // CERTIFICATE HTML
@@ -211,9 +227,11 @@ body {
 
 }
 
-/* ==============================
+
+/* ==================================================
+   NORMAL CERTIFICATE
    CANDIDATE NAME
-   ============================== */
+   ================================================== */
 
 .candidate-name {
 
@@ -247,28 +265,96 @@ body {
 }
 
 
-/* ==============================
-   CERTIFICATE TYPE TICK
-   ============================== */
+/* ==================================================
+   PRESENTATION CERTIFICATE
+   NAME
+   ================================================== */
 
-/*
-   The certificate artwork already
-   contains the text:
-
-   Organizer / Resource Person / Delegate
-
-   So we only overlay the selected
-   tick mark.
-*/
-
-.certificate-type-tick {
+.presentation-name {
 
   position: absolute;
 
-  top: 62.0%;
+  left: 10%;
+  top: 60.0%;
 
-  width: 34px;
-  height: 28px;
+  width: 37%;
+
+  height: 4.5%;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  font-family: Georgia, serif;
+
+  font-size: 21px;
+
+  font-weight: bold;
+
+  color: #102c4c;
+
+  text-align: center;
+
+  overflow: hidden;
+
+  white-space: nowrap;
+
+}
+
+
+/* ==================================================
+   PRESENTATION TITLE
+   ================================================== */
+
+.presentation-title {
+
+  position: absolute;
+
+  left: 24%;
+  top: 63.7%;
+
+  width: 66.5%;
+
+  height: 5.5%;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: flex-start;
+
+  font-family: Georgia, serif;
+
+  font-size: 16px;
+
+  font-weight: 500;
+
+  color: #102c4c;
+
+  text-align: left;
+
+  line-height: 1.15;
+
+  overflow: hidden;
+
+  white-space: nowrap;
+
+}
+
+
+/* ==================================================
+   RESEARCH PAPER / POSTER TICK
+   ================================================== */
+
+.presentation-type-tick {
+
+  position: absolute;
+
+  top: 66.2%;
+
+  width: 22px;
+  height: 22px;
 
   display: flex;
 
@@ -277,7 +363,7 @@ body {
 
   font-family: Arial, sans-serif;
 
-  font-size: 30px;
+  font-size: 20px;
 
   font-weight: 700;
 
@@ -292,42 +378,35 @@ body {
 }
 
 
-/* Organizer */
+/*
+   Research Paper
+*/
 
-.organizer-tick {
+.research-paper-tick {
 
-  left: 61.9%;
-
-  transform: translateX(-50%);
-
-}
-
-
-/* Resource Person */
-
-.resource-person-tick {
-
-  left: 69.0%;
+  left: 10.7%;
 
   transform: translateX(-50%);
 
 }
 
 
-/* Delegate */
+/*
+   Poster
+*/
 
-.delegate-tick {
+.poster-tick {
 
-  left: 81.5%;
+  left: 15.7%;
 
   transform: translateX(-50%);
 
 }
 
 
-/* ==============================
+/* ==================================================
    QR CODE
-   ============================== */
+   ================================================== */
 
 .qr-code {
 
@@ -344,9 +423,9 @@ body {
 }
 
 
-/* ==============================
+/* ==================================================
    GENERATED DATE & TIME
-   ============================== */
+   ================================================== */
 
 .generated-date {
 
@@ -369,9 +448,9 @@ body {
 }
 
 
-/* ==============================
+/* ==================================================
    CERTIFICATE ID
-   ============================== */
+   ================================================== */
 
 .certificate-id {
 
@@ -401,73 +480,63 @@ body {
 
 <div class="certificate">
 
-  <!-- ==========================================
-       CANDIDATE NAME
-       ========================================== -->
-
-  <div class="candidate-name">
-    ${escapeHtml(candidate.name)}
-  </div>
-
-
-  <!-- ==========================================
-       DYNAMIC CERTIFICATE TYPE TICK
-       ========================================== -->
-
   ${
-    showOrganizerTick
+    isPresentationCertificate
       ? `
-        <div
-          class="certificate-type-tick organizer-tick"
-          aria-label="Organizer selected"
-        >
-          ✓
+        <!-- PRESENTATION NAME -->
+
+        <div class="presentation-name">
+          ${escapeHtml(formattedName)}
+        </div>
+
+        <!-- PRESENTATION TITLE -->
+
+        <div class="presentation-title">
+          ${escapeHtml(formattedPresentationTitle)}
+        </div>
+
+        <!-- RESEARCH PAPER TICK -->
+
+        ${
+          certificateType === "Research Paper"
+            ? `
+              <div class="presentation-type-tick research-paper-tick">
+                ✓
+              </div>
+            `
+            : ""
+        }
+
+        <!-- POSTER TICK -->
+
+        ${
+          certificateType === "Poster"
+            ? `
+              <div class="presentation-type-tick poster-tick">
+                ✓
+              </div>
+            `
+            : ""
+        }
+      `
+      : `
+        <!-- NORMAL CERTIFICATE NAME -->
+
+        <div class="candidate-name">
+          ${escapeHtml(formattedName)}
         </div>
       `
-      : ""
   }
 
 
-  ${
-    showResourcePersonTick
-      ? `
-        <div
-          class="certificate-type-tick resource-person-tick"
-          aria-label="Resource Person selected"
-        >
-          ✓
-        </div>
-      `
-      : ""
-  }
-
-
-  ${
-    showDelegateTick
-      ? `
-        <div
-          class="certificate-type-tick delegate-tick"
-          aria-label="Delegate selected"
-        >
-          ✓
-        </div>
-      `
-      : ""
-  }
-
-
-  <!-- ==========================================
-       CERTIFICATE ID
-       ========================================== -->
+  <!-- CERTIFICATE ID -->
 
   <div class="certificate-id">
     Certificate ID: ${escapeHtml(certificateId)}
   </div>
 
 
-  <!-- ==========================================
-       QR CODE
-       ========================================== -->
+  <!-- QR CODE -->
 
   <img
     class="qr-code"
@@ -476,9 +545,7 @@ body {
   />
 
 
-  <!-- ==========================================
-       GENERATED DATE & TIME
-       ========================================== -->
+  <!-- GENERATED DATE & TIME -->
 
   <div class="generated-date">
     Generated On: ${escapeHtml(formattedDateTime)}
@@ -501,30 +568,11 @@ body {
 
     browser = await puppeteer.launch({
 
-      /*
-       * IMPORTANT
-       *
-       * Puppeteer's Chrome Headless Shell
-       * use kar rahe hain.
-       */
-
       headless: "shell",
-
-      /*
-       * CDP command timeout
-       */
 
       protocolTimeout: 180000,
 
-      /*
-       * Browser launch timeout
-       */
-
       timeout: 120000,
-
-      /*
-       * Browser output terminal mein
-       */
 
       dumpio: true,
 
@@ -629,12 +677,10 @@ body {
 
     await page.evaluate(async () => {
 
-      // Wait for fonts
       if (document.fonts) {
         await document.fonts.ready;
       }
 
-      // Wait for images
       const images =
         Array.from(document.images);
 
@@ -745,13 +791,13 @@ body {
     );
 
     console.log(
-      "Certificate ID:",
-      certificateId
+      "Certificate Type:",
+      certificateType
     );
 
     console.log(
-      "Certificate Type:",
-      certificateType
+      "Certificate ID:",
+      certificateId
     );
 
     console.log(
