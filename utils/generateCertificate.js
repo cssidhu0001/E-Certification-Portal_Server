@@ -12,6 +12,7 @@ const generateCertificate = async (candidate, certificateId) => {
     console.log("Starting certificate generation...");
     console.log("Candidate:", candidate.name);
     console.log("Certificate ID:", certificateId);
+    console.log("Certificate Type:", candidate.certificateType);
     console.log("======================================");
 
     // ==================================================
@@ -126,6 +127,34 @@ const generateCertificate = async (candidate, certificateId) => {
     };
 
     // ==================================================
+    // CERTIFICATE TYPE
+    // ==================================================
+
+    const certificateType =
+      String(candidate.certificateType || "").trim();
+
+    // ==================================================
+    // DYNAMIC TICK
+    // ==================================================
+    //
+    // Current certificate artwork contains:
+    //
+    // Organizer / Resource Person / Delegate
+    //
+    // Each option has its own exact position.
+    //
+    // ==================================================
+
+    const showOrganizerTick =
+      certificateType === "Organizer";
+
+    const showResourcePersonTick =
+      certificateType === "Resource Person";
+
+    const showDelegateTick =
+      certificateType === "Delegate";
+
+    // ==================================================
     // CERTIFICATE HTML
     // ==================================================
 
@@ -217,6 +246,85 @@ body {
 
 }
 
+
+/* ==============================
+   CERTIFICATE TYPE TICK
+   ============================== */
+
+/*
+   The certificate artwork already
+   contains the text:
+
+   Organizer / Resource Person / Delegate
+
+   So we only overlay the selected
+   tick mark.
+*/
+
+.certificate-type-tick {
+
+  position: absolute;
+
+  top: 62.0%;
+
+  width: 34px;
+  height: 28px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  font-family: Arial, sans-serif;
+
+  font-size: 30px;
+
+  font-weight: 700;
+
+  line-height: 1;
+
+  color: #102c4c;
+
+  z-index: 10;
+
+  pointer-events: none;
+
+}
+
+
+/* Organizer */
+
+.organizer-tick {
+
+  left: 61.9%;
+
+  transform: translateX(-50%);
+
+}
+
+
+/* Resource Person */
+
+.resource-person-tick {
+
+  left: 69.0%;
+
+  transform: translateX(-50%);
+
+}
+
+
+/* Delegate */
+
+.delegate-tick {
+
+  left: 81.5%;
+
+  transform: translateX(-50%);
+
+}
+
+
 /* ==============================
    QR CODE
    ============================== */
@@ -234,6 +342,7 @@ body {
   bottom: 4%;
 
 }
+
 
 /* ==============================
    GENERATED DATE & TIME
@@ -258,24 +367,32 @@ body {
   white-space: nowrap;
 
 }
+
+
 /* ==============================
    CERTIFICATE ID
    ============================== */
 
 .certificate-id {
+
   position: absolute;
 
   top: 3.2%;
+
   right: 5%;
 
   font-family: Arial, sans-serif;
+
   font-size: 12px;
+
   font-weight: 700;
 
   color: #102c4c;
 
   white-space: nowrap;
+
 }
+
 </style>
 
 </head>
@@ -284,19 +401,73 @@ body {
 
 <div class="certificate">
 
-  <!-- CANDIDATE NAME -->
+  <!-- ==========================================
+       CANDIDATE NAME
+       ========================================== -->
 
   <div class="candidate-name">
     ${escapeHtml(candidate.name)}
   </div>
 
-    <!-- CERTIFICATE ID -->
+
+  <!-- ==========================================
+       DYNAMIC CERTIFICATE TYPE TICK
+       ========================================== -->
+
+  ${
+    showOrganizerTick
+      ? `
+        <div
+          class="certificate-type-tick organizer-tick"
+          aria-label="Organizer selected"
+        >
+          ✓
+        </div>
+      `
+      : ""
+  }
+
+
+  ${
+    showResourcePersonTick
+      ? `
+        <div
+          class="certificate-type-tick resource-person-tick"
+          aria-label="Resource Person selected"
+        >
+          ✓
+        </div>
+      `
+      : ""
+  }
+
+
+  ${
+    showDelegateTick
+      ? `
+        <div
+          class="certificate-type-tick delegate-tick"
+          aria-label="Delegate selected"
+        >
+          ✓
+        </div>
+      `
+      : ""
+  }
+
+
+  <!-- ==========================================
+       CERTIFICATE ID
+       ========================================== -->
 
   <div class="certificate-id">
     Certificate ID: ${escapeHtml(certificateId)}
   </div>
 
-  <!-- QR CODE -->
+
+  <!-- ==========================================
+       QR CODE
+       ========================================== -->
 
   <img
     class="qr-code"
@@ -304,7 +475,10 @@ body {
     alt="Certificate QR Code"
   />
 
-  <!-- GENERATED DATE & TIME -->
+
+  <!-- ==========================================
+       GENERATED DATE & TIME
+       ========================================== -->
 
   <div class="generated-date">
     Generated On: ${escapeHtml(formattedDateTime)}
@@ -573,6 +747,11 @@ body {
     console.log(
       "Certificate ID:",
       certificateId
+    );
+
+    console.log(
+      "Certificate Type:",
+      certificateType
     );
 
     console.log(
