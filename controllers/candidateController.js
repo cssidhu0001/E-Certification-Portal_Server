@@ -1,6 +1,7 @@
 const Candidate = require("../models/Candidate");
 const generateCertificate = require("../utils/generateCertificate");
 const { formatTitleCase } = require("../utils/formatText");
+const certificateQueue = require("../utils/certificateQueue");
 
 // ======================================================
 // CREATE CANDIDATE
@@ -212,11 +213,9 @@ const updateCandidateStatus = async (req, res) => {
 
       try {
 
-        certificateUrl =
-          await generateCertificate(
-            candidate,
-            certificateId
-          );
+      const certificateUrl = await certificateQueue.add(() =>
+  generateCertificate(candidate, certificateId)
+);
           candidate.status = "Approved";
 candidate.certificateId = certificateId;
 candidate.certificateUrl = certificateUrl;
