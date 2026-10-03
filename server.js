@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 require("dotenv").config();
+const healthRoutes = require("./routes/healthRoutes");
 const candidateRoutes = require("./routes/candidateRoutes");
 const verificationRoutes = require("./routes/verificationRoutes");
 const adminRoutes = require("./routes/adminRoutes");
@@ -22,6 +23,7 @@ app.use(express.json());
 app.get("/", (req, res) => {
   res.send("Conference Certificate API Running");
 });
+app.use("/api/health", healthRoutes);
 app.use(
   "/certificates",
   express.static(path.join(__dirname, "certificates"))
