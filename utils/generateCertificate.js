@@ -4,6 +4,7 @@ const path = require("path");
 const fs = require("fs");
 
 const { formatTitleCase } = require("../utils/formatText");
+const { uploadCertificate } = require("../utils/cloudinary");
 
 const generateCertificate = async (candidate, certificateId) => {
   let browser = null;
@@ -910,6 +911,29 @@ body {
     }
 
     // ==================================================
+    // UPLOAD TO CLOUDINARY
+    // ==================================================
+
+    console.log(
+      "Uploading generated PDF to Cloudinary..."
+    );
+
+    const cloudinaryUrl =
+      await uploadCertificate(
+        filePath,
+        fileName
+      );
+
+    console.log(
+      "Cloudinary upload completed successfully"
+    );
+
+    console.log(
+      "Cloudinary URL:",
+      cloudinaryUrl
+    );
+
+    // ==================================================
     // SUCCESS
     // ==================================================
 
@@ -948,10 +972,19 @@ body {
     );
 
     console.log(
+      "Cloudinary URL:",
+      cloudinaryUrl
+    );
+
+    console.log(
       "======================================"
     );
 
-    return `/certificates/${fileName}`;
+    // ==================================================
+    // RETURN CLOUDINARY URL
+    // ==================================================
+
+    return cloudinaryUrl;
 
   } catch (error) {
 
