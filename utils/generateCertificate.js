@@ -387,7 +387,7 @@ body {
 
   position: absolute;
 
-  left: 24%;
+  left: 23%;
   top: 63.7%;
 
   width: 66.5%;
@@ -402,7 +402,7 @@ body {
 
   font-family: Georgia, serif;
 
-  font-size: 14px;
+  font-size: 12px;
 
   font-weight: bold;
 
