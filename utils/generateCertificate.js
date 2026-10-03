@@ -402,9 +402,9 @@ body {
 
   font-family: Georgia, serif;
 
-  font-size: 16px;
+  font-size: 14px;
 
-  font-weight: 500;
+  font-weight: bold;
 
   color: #102c4c;
 
