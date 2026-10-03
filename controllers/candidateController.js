@@ -77,17 +77,15 @@ const createCandidate = async (req, res) => {
 
 const getCandidates = async (req, res) => {
   try {
-
-    const candidates = await Candidate.find()
-      .sort({ createdAt: -1 });
+    const candidates = await Candidate.find().sort({
+      createdAt: -1,
+    });
 
     return res.json({
       success: true,
       candidates,
     });
-
   } catch (error) {
-
     console.error("Get Candidates Error:", error);
 
     return res.status(500).json({
@@ -97,16 +95,13 @@ const getCandidates = async (req, res) => {
   }
 };
 
-
 // ======================================================
 // UPDATE CANDIDATE STATUS
 // APPROVE / REJECT
 // ======================================================
 
 const updateCandidateStatus = async (req, res) => {
-
   try {
-
     const { status } = req.body;
     const candidateId = req.params.id;
 
@@ -116,20 +111,16 @@ const updateCandidateStatus = async (req, res) => {
     console.log("Requested Status:", status);
     console.log("--------------------------------------");
 
-
     // --------------------------------------------------
     // Validate status
     // --------------------------------------------------
 
     if (!["Approved", "Rejected"].includes(status)) {
-
       return res.status(400).json({
         success: false,
         message: "Invalid status. Use Approved or Rejected.",
       });
-
     }
-
 
     // --------------------------------------------------
     // Find candidate
@@ -138,26 +129,21 @@ const updateCandidateStatus = async (req, res) => {
     const candidate = await Candidate.findById(candidateId);
 
     if (!candidate) {
-
       return res.status(404).json({
         success: false,
         message: "Candidate not found.",
       });
-
     }
-
 
     console.log("Candidate found:", candidate.name);
     console.log("Candidate email:", candidate.email);
     console.log("Current status:", candidate.status);
-
 
     // ==================================================
     // APPROVE CANDIDATE
     // ==================================================
 
     if (status === "Approved") {
-
       // ------------------------------------------------
       // If already approved and certificate exists
       // don't generate another certificate
@@ -168,7 +154,6 @@ const updateCandidateStatus = async (req, res) => {
         candidate.certificateId &&
         candidate.certificateUrl
       ) {
-
         console.log(
           "Candidate already approved. Existing certificate will be returned."
         );
@@ -178,9 +163,7 @@ const updateCandidateStatus = async (req, res) => {
           message: "Candidate is already approved.",
           candidate,
         });
-
       }
-
 
       // ------------------------------------------------
       // Generate Certificate ID
@@ -193,44 +176,32 @@ const updateCandidateStatus = async (req, res) => {
           .substring(2, 8)
           .toUpperCase();
 
-
       console.log(
         "Certificate ID generated:",
         certificateId
       );
 
-
       // ------------------------------------------------
       // Generate Certificate PDF
+      // Through certificate queue
       // ------------------------------------------------
 
       console.log(
         "Starting certificate generation..."
       );
 
-
       let certificateUrl;
 
       try {
-
-      const certificateUrl = await certificateQueue.add(() =>
-  generateCertificate(candidate, certificateId)
-);
-          candidate.status = "Approved";
-candidate.certificateId = certificateId;
-candidate.certificateUrl = certificateUrl;
-candidate.approvedAt = new Date();
-
-
+        certificateUrl = await certificateQueue.add(() =>
+          generateCertificate(candidate, certificateId)
+        );
       } catch (certificateError) {
-
         console.error(
           "Certificate generation failed:"
         );
 
-        console.error(
-          certificateError
-        );
+        console.error(certificateError);
 
         return res.status(500).json({
           success: false,
@@ -238,9 +209,7 @@ candidate.approvedAt = new Date();
             "Candidate approval failed because certificate generation failed.",
           error: certificateError.message,
         });
-
       }
-
 
       // ------------------------------------------------
       // Certificate generated successfully
@@ -250,26 +219,36 @@ candidate.approvedAt = new Date();
         "Certificate generated successfully:"
       );
 
-      console.log(
-        certificateUrl
-      );
+      console.log(certificateUrl);
 
+      // ------------------------------------------------
+      // Validate returned Cloudinary URL
+      // ------------------------------------------------
+
+      if (!certificateUrl) {
+        console.error(
+          "Certificate URL was not returned by generateCertificate."
+        );
+
+        return res.status(500).json({
+          success: false,
+          message:
+            "Certificate was generated but certificate URL was not returned.",
+        });
+      }
 
       // ------------------------------------------------
       // Update candidate
+      // Only after successful certificate generation
       // ------------------------------------------------
 
       candidate.status = "Approved";
 
-      candidate.certificateId =
-        certificateId;
+      candidate.certificateId = certificateId;
 
-      candidate.certificateUrl =
-        certificateUrl;
+      candidate.certificateUrl = certificateUrl;
 
-      candidate.approvedAt =
-        new Date();
-
+      candidate.approvedAt = new Date();
 
       // ------------------------------------------------
       // Save candidate
@@ -277,91 +256,76 @@ candidate.approvedAt = new Date();
 
       await candidate.save();
 
+      console.log(
+        "Certificate URL saved to MongoDB:",
+        candidate.certificateUrl
+      );
 
       console.log(
         "Candidate approved successfully."
       );
-
 
       // ------------------------------------------------
       // Response
       // ------------------------------------------------
 
       return res.json({
-
         success: true,
 
         message:
           "Candidate approved and certificate generated successfully.",
 
         candidate,
-
       });
-
     }
-
 
     // ==================================================
     // REJECT CANDIDATE
     // ==================================================
 
     if (status === "Rejected") {
-
       candidate.status = "Rejected";
 
-      // Optional:
       // Remove approval/certificate information
       candidate.certificateId = undefined;
       candidate.certificateUrl = undefined;
       candidate.approvedAt = undefined;
 
-
       await candidate.save();
-
 
       console.log(
         "Candidate rejected successfully."
       );
 
-
       return res.json({
-
         success: true,
 
         message: "Candidate rejected successfully.",
 
         candidate,
-
       });
-
     }
-
-
   } catch (error) {
-
     console.error(
       "Update Candidate Status Error:"
     );
 
     console.error(error);
 
-
     return res.status(500).json({
-
       success: false,
 
       message:
         "Failed to update candidate status.",
 
       error: error.message,
-
     });
-
   }
-
 };
 
-
+// ======================================================
+// GET CANDIDATE CERTIFICATE STATUS
+// ======================================================
 
 const getCandidateCertificateStatus = async (req, res) => {
   try {
@@ -383,43 +347,47 @@ const getCandidateCertificateStatus = async (req, res) => {
     if (!candidate) {
       return res.status(404).json({
         success: false,
-        message: "No registration found with this email",
+        message:
+          "No registration found with this email",
       });
     }
 
     return res.status(200).json({
       success: true,
+
       candidate: {
         name: candidate.name,
         email: candidate.email,
         status: candidate.status,
-        certificateId: candidate.certificateId || null,
-        certificateUrl: candidate.certificateUrl || null,
-        approvedAt: candidate.approvedAt || null,
+        certificateId:
+          candidate.certificateId || null,
+        certificateUrl:
+          candidate.certificateUrl || null,
+        approvedAt:
+          candidate.approvedAt || null,
       },
     });
   } catch (error) {
-    console.error("Certificate status error:", error);
+    console.error(
+      "Certificate status error:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
-      message: "Unable to fetch certificate status",
+      message:
+        "Unable to fetch certificate status",
     });
   }
 };
-
 
 // ======================================================
 // EXPORT CONTROLLERS
 // ======================================================
 
 module.exports = {
-
   createCandidate,
-
   getCandidates,
-
   updateCandidateStatus,
-
-   getCandidateCertificateStatus,
+  getCandidateCertificateStatus,
 };
