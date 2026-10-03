@@ -387,7 +387,7 @@ body {
 
   position: absolute;
 
-  left: 23%;
+  left: 23.5%;
   top: 63.7%;
 
   width: 66.5%;
