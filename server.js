@@ -6,6 +6,7 @@ const healthRoutes = require("./routes/healthRoutes");
 const candidateRoutes = require("./routes/candidateRoutes");
 const verificationRoutes = require("./routes/verificationRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const reportRoutes = require("./routes/reportRoutes");
 const connectDB = require("./config/db");
 
 
@@ -15,6 +16,11 @@ connectDB();
 
 app.use(cors({
     origin: process.env.FRONTEND_URL,
+       credentials: true,
+    exposedHeaders: [
+      "X-Export-Password",
+      "X-Export-Filename",
+    ],
   }));
 app.use(express.json());
 
@@ -31,6 +37,7 @@ app.use(
 app.use("/api/candidates", candidateRoutes);
 app.use("/api/verify", verificationRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/reports", reportRoutes);
 
 
 
