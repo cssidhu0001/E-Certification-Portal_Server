@@ -10,15 +10,12 @@ const getDatasetConfig = (dataset) => {
 
   return config;
 };
-
 const getFieldMap = (config) => {
   return new Map(config.fields.map((field) => [field.key, field]));
 };
-
 const buildMongoQuery = (filters = {}, config) => {
   const fieldMap = getFieldMap(config);
   const query = {};
-
   for (const [key, value] of Object.entries(filters)) {
     if (value === undefined || value === null || value === "") {
       continue;
@@ -69,7 +66,7 @@ const buildMongoQuery = (filters = {}, config) => {
           throw new Error(`Invalid end date for ${field.label}.`);
         }
 
-        // Include the complete "to" date.
+        // Include the complete "to" 
         to.setHours(23, 59, 59, 999);
 
         dateQuery.$lte = to;
