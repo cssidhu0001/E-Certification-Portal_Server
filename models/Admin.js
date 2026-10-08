@@ -8,6 +8,12 @@ const adminSchema = new mongoose.Schema(
       trim: true,
     },
 
+    designation: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
     email: {
       type: String,
       required: true,

@@ -77,10 +77,12 @@ const createCandidate = async (req, res) => {
 
 const getCandidates = async (req, res) => {
   try {
-    const candidates = await Candidate.find().sort({
-      createdAt: -1,
-    });
-
+   const candidates = await Candidate.find()
+  .populate(
+    "approvedBy",
+    "name email designation"
+  )
+  .sort({ createdAt: -1 });
     return res.json({
       success: true,
       candidates,
@@ -109,6 +111,8 @@ const updateCandidateStatus = async (req, res) => {
     console.log("Candidate Status Update");
     console.log("Candidate ID:", candidateId);
     console.log("Requested Status:", status);
+    console.log("Authenticated Admin:", req.admin);
+    console.log("Admin ID:", req.admin?.adminId);
     console.log("--------------------------------------");
 
     // --------------------------------------------------
@@ -119,6 +123,22 @@ const updateCandidateStatus = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Invalid status. Use Approved or Rejected.",
+      });
+    }
+
+    // --------------------------------------------------
+    // Make sure admin authentication exists
+    // --------------------------------------------------
+
+    if (!req.admin?.adminId) {
+      console.error(
+        "Admin authentication data missing."
+      );
+
+      return res.status(401).json({
+        success: false,
+        message:
+          "Admin authentication is missing or invalid. Please login again.",
       });
     }
 
@@ -135,9 +155,20 @@ const updateCandidateStatus = async (req, res) => {
       });
     }
 
-    console.log("Candidate found:", candidate.name);
-    console.log("Candidate email:", candidate.email);
-    console.log("Current status:", candidate.status);
+    console.log(
+      "Candidate found:",
+      candidate.name
+    );
+
+    console.log(
+      "Candidate email:",
+      candidate.email
+    );
+
+    console.log(
+      "Current status:",
+      candidate.status
+    );
 
     // ==================================================
     // APPROVE CANDIDATE
@@ -145,8 +176,7 @@ const updateCandidateStatus = async (req, res) => {
 
     if (status === "Approved") {
       // ------------------------------------------------
-      // If already approved and certificate exists
-      // don't generate another certificate
+      // Already approved
       // ------------------------------------------------
 
       if (
@@ -158,9 +188,15 @@ const updateCandidateStatus = async (req, res) => {
           "Candidate already approved. Existing certificate will be returned."
         );
 
+        console.log(
+          "Existing Approved By:",
+          candidate.approvedBy
+        );
+
         return res.json({
           success: true,
-          message: "Candidate is already approved.",
+          message:
+            "Candidate is already approved.",
           candidate,
         });
       }
@@ -182,8 +218,7 @@ const updateCandidateStatus = async (req, res) => {
       );
 
       // ------------------------------------------------
-      // Generate Certificate PDF
-      // Through certificate queue
+      // Generate Certificate
       // ------------------------------------------------
 
       console.log(
@@ -193,26 +228,33 @@ const updateCandidateStatus = async (req, res) => {
       let certificateUrl;
 
       try {
-        certificateUrl = await certificateQueue.add(() =>
-          generateCertificate(candidate, certificateId)
-        );
+        certificateUrl =
+          await certificateQueue.add(() =>
+            generateCertificate(
+              candidate,
+              certificateId
+            )
+          );
       } catch (certificateError) {
         console.error(
           "Certificate generation failed:"
         );
 
-        console.error(certificateError);
+        console.error(
+          certificateError
+        );
 
         return res.status(500).json({
           success: false,
           message:
             "Candidate approval failed because certificate generation failed.",
-          error: certificateError.message,
+          error:
+            certificateError.message,
         });
       }
 
       // ------------------------------------------------
-      // Certificate generated successfully
+      // Validate Certificate URL
       // ------------------------------------------------
 
       console.log(
@@ -220,10 +262,6 @@ const updateCandidateStatus = async (req, res) => {
       );
 
       console.log(certificateUrl);
-
-      // ------------------------------------------------
-      // Validate returned Cloudinary URL
-      // ------------------------------------------------
 
       if (!certificateUrl) {
         console.error(
@@ -237,18 +275,32 @@ const updateCandidateStatus = async (req, res) => {
         });
       }
 
-      // ------------------------------------------------
-      // Update candidate
-      // Only after successful certificate generation
-      // ------------------------------------------------
+      // =================================================
+      // SAVE APPROVAL DETAILS
+      // =================================================
 
       candidate.status = "Approved";
 
-      candidate.certificateId = certificateId;
+      candidate.certificateId =
+        certificateId;
 
-      candidate.certificateUrl = certificateUrl;
+      candidate.certificateUrl =
+        certificateUrl;
 
-      candidate.approvedAt = new Date();
+      candidate.approvedAt =
+        new Date();
+
+      // ------------------------------------------------
+      // Save approving admin
+      // ------------------------------------------------
+
+      candidate.approvedBy =
+        req.admin.adminId;
+
+      console.log(
+        "Approved By Admin:",
+        req.admin.adminId
+      );
 
       // ------------------------------------------------
       // Save candidate
@@ -259,6 +311,11 @@ const updateCandidateStatus = async (req, res) => {
       console.log(
         "Certificate URL saved to MongoDB:",
         candidate.certificateUrl
+      );
+
+      console.log(
+        "Approved By Admin saved:",
+        candidate.approvedBy
       );
 
       console.log(
@@ -286,10 +343,18 @@ const updateCandidateStatus = async (req, res) => {
     if (status === "Rejected") {
       candidate.status = "Rejected";
 
-      // Remove approval/certificate information
-      candidate.certificateId = undefined;
-      candidate.certificateUrl = undefined;
-      candidate.approvedAt = undefined;
+      // Remove certificate information
+      candidate.certificateId =
+        undefined;
+
+      candidate.certificateUrl =
+        undefined;
+
+      candidate.approvedAt =
+        undefined;
+
+      // Remove previous approving admin
+      candidate.approvedBy = null;
 
       await candidate.save();
 
@@ -300,7 +365,8 @@ const updateCandidateStatus = async (req, res) => {
       return res.json({
         success: true,
 
-        message: "Candidate rejected successfully.",
+        message:
+          "Candidate rejected successfully.",
 
         candidate,
       });
@@ -338,11 +404,18 @@ const getCandidateCertificateStatus = async (req, res) => {
       });
     }
 
+    const normalizedEmail = email.toLowerCase().trim();
+
     const candidate = await Candidate.findOne({
-      email: email.toLowerCase().trim(),
-    }).select(
-      "name email status certificateId certificateUrl approvedAt"
-    );
+      email: normalizedEmail,
+    })
+      .select(
+        "name email status certificateId certificateUrl approvedAt approvedBy participationType certificateType eventName institution designation presentationTitle"
+      )
+      .populate(
+        "approvedBy",
+        "name email designation"
+      );
 
     if (!candidate) {
       return res.status(404).json({
@@ -359,12 +432,42 @@ const getCandidateCertificateStatus = async (req, res) => {
         name: candidate.name,
         email: candidate.email,
         status: candidate.status,
+
         certificateId:
           candidate.certificateId || null,
+
         certificateUrl:
           candidate.certificateUrl || null,
+
         approvedAt:
           candidate.approvedAt || null,
+
+        approvedBy: candidate.approvedBy
+          ? {
+              name: candidate.approvedBy.name,
+              email: candidate.approvedBy.email,
+              designation:
+                candidate.approvedBy.designation || "",
+            }
+          : null,
+
+        participationType:
+          candidate.participationType || "",
+
+        certificateType:
+          candidate.certificateType || "",
+
+        eventName:
+          candidate.eventName || "",
+
+        institution:
+          candidate.institution || "",
+
+        designation:
+          candidate.designation || "",
+
+        presentationTitle:
+          candidate.presentationTitle || "",
       },
     });
   } catch (error) {
@@ -380,7 +483,6 @@ const getCandidateCertificateStatus = async (req, res) => {
     });
   }
 };
-
 // ======================================================
 // EXPORT CONTROLLERS
 // ======================================================

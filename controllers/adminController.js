@@ -2,11 +2,19 @@ const Admin = require("../models/Admin");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
+
+// ==================================================
+// ADMIN LOGIN
+// ==================================================
+
 const adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // ------------------------------------------------
     // Validate input
+    // ------------------------------------------------
+
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -14,7 +22,10 @@ const adminLogin = async (req, res) => {
       });
     }
 
+    // ------------------------------------------------
     // Find admin
+    // ------------------------------------------------
+
     const admin = await Admin.findOne({
       email: email.toLowerCase().trim(),
     });
@@ -26,7 +37,10 @@ const adminLogin = async (req, res) => {
       });
     }
 
+    // ------------------------------------------------
     // Check password
+    // ------------------------------------------------
+
     const isPasswordCorrect = await bcrypt.compare(
       password,
       admin.password
@@ -39,7 +53,10 @@ const adminLogin = async (req, res) => {
       });
     }
 
+    // ------------------------------------------------
     // Create JWT
+    // ------------------------------------------------
+
     const token = jwt.sign(
       {
         adminId: admin._id,
@@ -51,13 +68,19 @@ const adminLogin = async (req, res) => {
       }
     );
 
+    // ------------------------------------------------
+    // Response
+    // ------------------------------------------------
+
     return res.status(200).json({
       success: true,
       message: "Admin login successful",
       token,
+
       admin: {
         id: admin._id,
         name: admin.name,
+        designation: admin.designation || "",
         email: admin.email,
       },
     });
@@ -72,17 +95,34 @@ const adminLogin = async (req, res) => {
 };
 
 
+// ==================================================
+// ADMIN REGISTER
+// ==================================================
 
 const adminRegister = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const {
+      name,
+      designation,
+      email,
+      password,
+    } = req.body;
 
-    if (!name || !email || !password) {
+    // ------------------------------------------------
+    // Validate input
+    // ------------------------------------------------
+
+    if (!name || !designation || !email || !password) {
       return res.status(400).json({
         success: false,
-        message: "Name, email and password are required",
+        message:
+          "Name, designation, email and password are required",
       });
     }
+
+    // ------------------------------------------------
+    // Validate password
+    // ------------------------------------------------
 
     if (password.length < 8) {
       return res.status(400).json({
@@ -91,7 +131,15 @@ const adminRegister = async (req, res) => {
       });
     }
 
+    // ------------------------------------------------
+    // Normalize email
+    // ------------------------------------------------
+
     const normalizedEmail = email.toLowerCase().trim();
+
+    // ------------------------------------------------
+    // Check existing admin
+    // ------------------------------------------------
 
     const existingAdmin = await Admin.findOne({
       email: normalizedEmail,
@@ -104,20 +152,38 @@ const adminRegister = async (req, res) => {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
+    // ------------------------------------------------
+    // Hash password
+    // ------------------------------------------------
+
+    const hashedPassword = await bcrypt.hash(
+      password,
+      12
+    );
+
+    // ------------------------------------------------
+    // Create admin
+    // ------------------------------------------------
 
     const admin = await Admin.create({
       name: name.trim(),
+      designation: designation.trim(),
       email: normalizedEmail,
       password: hashedPassword,
     });
 
+    // ------------------------------------------------
+    // Response
+    // ------------------------------------------------
+
     return res.status(201).json({
       success: true,
       message: "Admin registered successfully",
+
       admin: {
         id: admin._id,
         name: admin.name,
+        designation: admin.designation,
         email: admin.email,
       },
     });
@@ -130,6 +196,7 @@ const adminRegister = async (req, res) => {
     });
   }
 };
+
 
 module.exports = {
   adminLogin,

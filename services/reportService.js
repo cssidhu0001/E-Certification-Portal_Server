@@ -1,6 +1,5 @@
 const Candidate = require("../models/Candidate");
 const reportConfig = require("../config/reportConfig");
-
 const getDatasetConfig = (dataset) => {
   const config = reportConfig[dataset];
 

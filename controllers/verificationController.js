@@ -7,7 +7,10 @@ const Candidate = require("../models/Candidate");
 const verifyCertificateByQR = async (req, res) => {
   console.log("================================");
   console.log("QR VERIFY API HIT");
-  console.log("Certificate ID:", req.params.certificateId);
+  console.log(
+    "Certificate ID:",
+    req.params.certificateId
+  );
   console.log("================================");
 
   try {
@@ -24,7 +27,12 @@ const verifyCertificateByQR = async (req, res) => {
     const candidate = await Candidate.findOne({
       certificateId: certificateId.trim(),
       status: "Approved",
-    }).select("-__v");
+    })
+      .select("-__v")
+      .populate(
+        "approvedBy",
+        "name email designation"
+      );
 
     console.log("Candidate found:", candidate);
 
@@ -62,7 +70,10 @@ const verifyCertificateManually = async (req, res) => {
   console.log("================================");
   console.log("MANUAL VERIFY API HIT");
   console.log("Email:", req.query.email);
-  console.log("Certificate ID:", req.query.certificateId);
+  console.log(
+    "Certificate ID:",
+    req.query.certificateId
+  );
   console.log("================================");
 
   try {
@@ -72,7 +83,8 @@ const verifyCertificateManually = async (req, res) => {
       return res.status(400).json({
         success: false,
         valid: false,
-        message: "Email and Certificate ID are required",
+        message:
+          "Email and Certificate ID are required",
       });
     }
 
@@ -80,7 +92,12 @@ const verifyCertificateManually = async (req, res) => {
       email: email.trim().toLowerCase(),
       certificateId: certificateId.trim(),
       status: "Approved",
-    }).select("-__v");
+    })
+      .select("-__v")
+      .populate(
+        "approvedBy",
+        "name email designation"
+      );
 
     console.log("Candidate found:", candidate);
 
@@ -88,23 +105,29 @@ const verifyCertificateManually = async (req, res) => {
       return res.status(404).json({
         success: false,
         valid: false,
-        message: "Email and Certificate ID do not match",
+        message:
+          "Email and Certificate ID do not match",
       });
     }
 
     return res.status(200).json({
       success: true,
       valid: true,
-      message: "Certificate verified successfully",
+      message:
+        "Certificate verified successfully",
       candidate,
     });
   } catch (error) {
-    console.error("MANUAL VERIFY ERROR:", error);
+    console.error(
+      "MANUAL VERIFY ERROR:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
       valid: false,
-      message: "Unable to verify certificate",
+      message:
+        "Unable to verify certificate",
     });
   }
 };
