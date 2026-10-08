@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-
+// Admin Proctection
 const protectAdmin = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
