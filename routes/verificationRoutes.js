@@ -14,4 +14,4 @@ router.get("/", verifyCertificateManually);
 router.get("/:certificateId", verifyCertificateByQR);
 
 
-module.exports = router;
+module.exports = router;    

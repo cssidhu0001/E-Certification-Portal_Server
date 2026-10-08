@@ -70,7 +70,11 @@ const candidateSchema = new mongoose.Schema(
       enum: ["Pending", "Approved", "Rejected"],
       default: "Pending",
     },
-
+approvedBy: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Admin",
+  default: null,
+},
     approvedAt: {
       type: Date,
     },
